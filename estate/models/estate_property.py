@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 from odoo import api,fields, models, _
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, ValidationError
 
 class PropertyModel(models.Model):
-    _name = "estate.property"
-    _description = "Estate Property Model"
+    _name = 'estate.property'
+    _description = 'Estate Property Model'
 
     name = fields.Char(string='Title',required=True)
     description = fields.Text()
@@ -31,46 +31,50 @@ class PropertyModel(models.Model):
         selection=[('new','New'),('offer_received','Offer Received'),('offer_accepted','Offer Accepted'),('sold','Sold'),('canceled','Canceled')],
         required=True,
         copy=False,
-        default="new"
+        default='new'
     )
     active = fields.Boolean(default=True)
-    property_type_id = fields.Many2one("estate.property.type", string="Property Type")
+    property_type_id = fields.Many2one('estate.property.type', string='Property Type')
     partner_id = fields.Many2one('res.partner', string='Buyer', copy=False)
     user_id = fields.Many2one('res.users', string='Salesperson', default=lambda self: self.env.user)
-    property_tag_id = fields.Many2many("estate.property.tag", string="Property Tags")
-    offer_ids = fields.One2many("estate.property.offer","property_id")
+    property_tag_id = fields.Many2many('estate.property.tag', string='Property Tags')
+    offer_ids = fields.One2many('estate.property.offer','property_id')
     total_area = fields.Float(string='Total Area (sqm)',compute='_compute_total_area')
     best_price = fields.Float(string='Best Offer',compute='_compute_best_price')
 
-    @api.depends("living_area","garden_area")
+    @api.depends('living_area','garden_area')
     def _compute_total_area(self):
         for record in self:
             record.total_area = record.living_area + record.garden_area
 
-    @api.depends("offer_ids.price")
+    @api.depends('offer_ids.price')
     def _compute_best_price(self):
         for record in self:
             record.best_price = max(self.offer_ids.mapped('price') + [0])
 
-    @api.onchange("garden")
+    @api.onchange('garden')
     def _onchange_garden(self):
         if self.garden:
-            self.garden_area = 10
-            self.garden_orientation = 'north'
+            self.write({
+                'garden_area': 10,
+                'garden_orientation': 'north',
+            })
         else:
-            self.garden_area = 0
-            self.garden_orientation = False
+            self.write({
+                'garden_area': 0,
+                'garden_orientation': False,
+            })
 
     def action_update_state_sold(self):
         for record in self:
             if record.state == 'canceled':
-                raise UserError(_("Canceled Properties can not be sold."))
+                raise UserError(_('Canceled Properties can not be sold.'))
             record.state = 'sold'
         return True
 
     def action_update_state_canceled(self):
         for record in self:
             if record.state == 'sold':
-                raise UserError(_("Sold Properties can not be canceled."))
+                raise UserError(_('Sold Properties can not be canceled.'))
             record.state = 'canceled'
         return True
