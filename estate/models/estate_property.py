@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-from odoo import api, fields, models
+from odoo import api, fields, models, _
+from odoo.exceptions import UserError
 
 class PropertyModel(models.Model):
     _name = "estate.property"
@@ -61,3 +62,18 @@ class PropertyModel(models.Model):
         else:
             self.garden_area = False
             self.garden_orientation = False
+
+
+
+    @api.depends('property_offers.status')
+    def action_sold(self):
+        if self.state == 'canceled':
+            raise UserError(_("You cannot set a canceled property as sold."))
+        self.state = 'sold'
+
+    @api.depends('property_offers.status')
+    def action_cancel(self):
+        if self.state == 'sold':
+            raise UserError(_("You cannot cancel a sold property."))
+        self.state = 'canceled'
+

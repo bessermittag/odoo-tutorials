@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-from odoo import api, fields, models
+from odoo import api, fields, models, _
+from odoo.exceptions import UserError
 
 class PropertyOfferModel(models.Model):
     _name = "estate.property.offer"
@@ -12,7 +13,6 @@ class PropertyOfferModel(models.Model):
     validity = fields.Integer(string='Validity (days)', default=7)
     date_deadline = fields.Date(string="Deadline", compute='_compute_date_deadline', inverse='_inverse_date_deadline',)
 
-
     @api.depends('validity')
     def _compute_date_deadline(self):
         for rec in self:
@@ -23,3 +23,18 @@ class PropertyOfferModel(models.Model):
         for rec in self:
             create_date = rec.create_date if rec.create_date else fields.Date.today()
             rec.validity = (rec.date_deadline - fields.Date.today()).days
+
+    def action_accept(self):
+        accepted_offers = self.env['estate.property.offer'].search(
+            [('property_id', '=', self.property_id.id), ('status', '=', 'accepted')])
+        if accepted_offers:
+            raise UserError(_("Only one offer can be accepted for a given property!"))
+
+        self.status = 'accepted'
+        self.property_id.state = 'offer_accepted'
+        self.property_id.selling_price = self.price
+        self.property_id.partner_id = self.partner_id.id
+
+    def action_refuse(self):
+        self.status = 'refused'
+        self.property_id.state = 'canceled'
