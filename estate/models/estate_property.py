@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-from odoo import fields, models
+from odoo import api, fields, models
 
 class PropertyModel(models.Model):
     _name = "estate.property"
     _description = "Estate Property Model"
 
-    name = fields.Char(string='Title',required=True)
+    name = fields.Char(string='Title', required=True)
     description = fields.Text()
     postcode = fields.Char()
     date_availability = fields.Date(
@@ -20,11 +20,13 @@ class PropertyModel(models.Model):
     facades = fields.Integer()
     garage = fields.Boolean()
     garden = fields.Boolean()
-    garden_area = fields.Integer(string='Garden Area (sqm)')
+    garden_area = fields.Integer(string='Garden Area (sqm)', default=10)
     garden_orientation = fields.Selection(
         string='Garden Orientation',
-        selection=[('north','North'),('south','South'),('east','East'),('west','West')]
+        selection=[('north','North'),('south','South'),('east','East'),('west','West')],
+        default='north'
     )
+    total_area = fields.Integer(string='Total Area (sqm)', compute='_compute_total_area')
     state = fields.Selection(
         string='Status',
         selection=[('new','New'),('offer_received','Offer Received'),('offer_accepted','Offer Accepted'),('sold','Sold'),('canceled','Canceled')],
@@ -38,3 +40,21 @@ class PropertyModel(models.Model):
     user_id = fields.Many2one('res.users', string='Salesperson', default=lambda self: self.env.user)
     property_tag_id = fields.Many2many("estate.property.tag", string="Property Tags")
     property_offers = fields.One2many("estate.property.offer","property_id")
+    best_price = fields.Float(readonly=True, compute='_compute_best_price')
+
+    def _compute_total_area(self):
+        for rec in self:
+            rec.total_area = rec.living_area + rec.garden_area
+
+    def _compute_best_price(self):
+        for rec in self:
+            rec.best_price = max(rec.property_offers.mapped('price')) if rec.property_offers else 0
+
+    @api.onchange('garden')
+    def _onchange_garden(self):
+        if self.garden:
+            self.garden_area = 10
+            self.garden_orientation = 'north'
+        else:
+            self.garden_area = False
+            self.garden_orientation = False
