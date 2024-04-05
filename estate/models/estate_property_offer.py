@@ -36,5 +36,7 @@ class PropertyOfferModel(models.Model):
         self.property_id.partner_id = self.partner_id.id
 
     def action_refuse(self):
+        if self.property_id.state =='sold':
+            raise UserError(_("You cannot refuse an offer for a sold property!"))
         self.status = 'refused'
         self.property_id.state = 'canceled'
