@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from odoo import api, fields, models, _
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, ValidationError
 
 class PropertyOfferModel(models.Model):
     _name = "estate.property.offer"
@@ -12,6 +12,10 @@ class PropertyOfferModel(models.Model):
     property_id = fields.Many2one('estate.property',required=True)
     validity = fields.Integer(string='Validity (days)', default=7)
     date_deadline = fields.Date(string="Deadline", compute='_compute_date_deadline', inverse='_inverse_date_deadline',)
+
+    _sql_constraints = [
+        ('price_check', 'CHECK(price >0)', 'The price must be positive!'),
+    ]
 
     @api.depends('validity')
     def _compute_date_deadline(self):
@@ -25,18 +29,30 @@ class PropertyOfferModel(models.Model):
             rec.validity = (rec.date_deadline - fields.Date.today()).days
 
     def action_accept(self):
-        accepted_offers = self.env['estate.property.offer'].search(
-            [('property_id', '=', self.property_id.id), ('status', '=', 'accepted')])
-        if accepted_offers:
-            raise UserError(_("Only one offer can be accepted for a given property!"))
-
-        self.status = 'accepted'
-        self.property_id.state = 'offer_accepted'
-        self.property_id.selling_price = self.price
-        self.property_id.partner_id = self.partner_id.id
+        for record in self:
+            if record.property_id.state in ['sold', 'canceled']:
+                raise UserError(_('Offers for canceled or sold Properties can\'t be accepted.'))
+            elif record.property_id.state == 'offer_accepted':
+                raise UserError(_('There is already an accepted Offer for this Property.'))
+            record.status = 'accepted'
+            record.property_id.write({
+                'state': 'offer_accepted',
+                'partner_id': record.partner_id,
+                'selling_price': record.price,
+            })
+            (record.property_id.property_offers - record).status = 'refused'
+        return True
 
     def action_refuse(self):
-        if self.property_id.state =='sold':
-            raise UserError(_("You cannot refuse an offer for a sold property!"))
-        self.status = 'refused'
-        self.property_id.state = 'canceled'
+        for record in self:
+            if record.property_id.state in ['sold', 'canceled']:
+                raise UserError(_('Offers for canceled or sold Properties can\'t be refused.'))
+            if record.status == 'accepted':
+                record.property_id.write({
+                    'partner_id': False,
+                    'selling_price': False,
+                    'state': 'new',
+                })
+            record.status = 'refused'
+        return True
+

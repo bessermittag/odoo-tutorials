@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from odoo import api, fields, models, _
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, ValidationError
+from odoo.tools import float_utils
 
 class PropertyModel(models.Model):
     _name = "estate.property"
@@ -42,7 +43,15 @@ class PropertyModel(models.Model):
     property_tag_id = fields.Many2many("estate.property.tag", string="Property Tags")
     property_offers = fields.One2many("estate.property.offer","property_id")
     best_price = fields.Float(string="Best Offer", readonly=True, compute='_compute_best_price', store=True)
-
+    _sql_constraints = [
+        ('expected_price_check', 'CHECK(expected_price >0)', 'The expected price must be strictly positive!'),
+        ('selling_price_check', 'CHECK(selling_price >= 0)', 'The selling price cannot be negative!'),
+    ]
+    @api.constrains('selling_price', 'expected_price')
+    def _check_selling_price(self):
+        for rec in self:
+            if not float_utils.float_is_zero(rec.selling_price, precision_digits=2) and rec.selling_price < 0.9 * rec.expected_price:
+                raise ValidationError(_('The Selling Price cannot be lower than 90% of the Expected Price.'))
 
     @api.onchange('living_area','garden_area')
     def _compute_total_area(self):
@@ -62,8 +71,6 @@ class PropertyModel(models.Model):
         else:
             self.garden_area = False
             self.garden_orientation = False
-
-
 
     @api.depends('property_offers.status')
     def action_sold(self):
