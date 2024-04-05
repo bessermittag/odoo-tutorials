@@ -1,15 +1,11 @@
 # -*- coding: utf-8 -*-
-from odoo import api, fields, models, _
-from odoo.exceptions import UserError, ValidationError
-from odoo.tools import float_utils
+from odoo import api,fields, models
 
 class PropertyModel(models.Model):
     _name = "estate.property"
-    _inherit = ['mail.thread', 'mail.activity.mixin']
     _description = "Estate Property Model"
-    _order = "id desc"
 
-    name = fields.Char(string='Title', required=True)
+    name = fields.Char(string='Title',required=True)
     description = fields.Text()
     postcode = fields.Char()
     date_availability = fields.Date(
@@ -24,13 +20,11 @@ class PropertyModel(models.Model):
     facades = fields.Integer()
     garage = fields.Boolean()
     garden = fields.Boolean()
-    garden_area = fields.Integer(string='Garden Area (sqm)', default=10)
+    garden_area = fields.Integer(string='Garden Area (sqm)')
     garden_orientation = fields.Selection(
         string='Garden Orientation',
-        selection=[('north','North'),('south','South'),('east','East'),('west','West')],
-        default='north'
+        selection=[('north','North'),('south','South'),('east','East'),('west','West')]
     )
-    total_area = fields.Integer(string='Total Area (sqm)', compute='_compute_total_area')
     state = fields.Selection(
         string='Status',
         selection=[('new','New'),('offer_received','Offer Received'),('offer_accepted','Offer Accepted'),('sold','Sold'),('canceled','Canceled')],
@@ -43,57 +37,23 @@ class PropertyModel(models.Model):
     partner_id = fields.Many2one('res.partner', string='Buyer', copy=False)
     user_id = fields.Many2one('res.users', string='Salesperson', default=lambda self: self.env.user)
     property_tag_id = fields.Many2many("estate.property.tag", string="Property Tags")
-    property_offers = fields.One2many("estate.property.offer","property_id")
-    best_price = fields.Float(string="Best Offer", readonly=True, compute='_compute_best_price', store=True)
-    _sql_constraints = [
-        ('expected_price_check', 'CHECK(expected_price >0)', 'The expected price must be strictly positive!'),
-        ('selling_price_check', 'CHECK(selling_price >= 0)', 'The selling price cannot be negative!'),
-    ]
+    offer_id = fields.One2many("estate.property.offer","property_id")
+    total_area = fields.Float(string='Total Area (sqm)',compute='_compute_total_area')
+    best_price = fields.Float(string='Best Offer',compute='_compute_best_price')
 
-
-    @api.constrains('selling_price', 'expected_price')
-    def _check_selling_price(self):
-        for rec in self:
-            if not float_utils.float_is_zero(rec.selling_price, precision_digits=2) and rec.selling_price < 0.9 * rec.expected_price:
-                raise ValidationError(_('The Selling Price cannot be lower than 90% of the Expected Price.'))
-
-    @api.onchange('living_area','garden_area')
+    @api.depends("living_area","garden_area","offer_id.price")
     def _compute_total_area(self):
-        for rec in self:
-            rec.total_area = rec.living_area + rec.garden_area
-
-    @api.depends('property_offers.price')
+        for record in self:
+            record.total_area = record.living_area + record.garden_area
     def _compute_best_price(self):
-        for rec in self:
-            rec.best_price = max(rec.property_offers.mapped('price')) if rec.property_offers else 0
+        for record in self:
+            record.best_price = max(self.offer_id.mapped('price'))#
 
-    @api.onchange('garden')
+    @api.onchange("garden")
     def _onchange_garden(self):
         if self.garden:
             self.garden_area = 10
             self.garden_orientation = 'north'
         else:
-            self.garden_area = False
-            self.garden_orientation = False
-
-    @api.depends('property_offers.status')
-    def action_sold(self):
-        if self.state == 'canceled':
-            raise UserError(_("You cannot set a canceled property as sold."))
-        self.state = 'sold'
-        self.message_post(body=_("Property %s has been sold.") % self.name,
-                          subtype_xmlid='mail.mt_note',
-                          )
-
-    @api.depends('property_offers.status')
-    def action_cancel(self):
-        if self.state == 'sold':
-            raise UserError(_("You cannot cancel a sold property."))
-        self.state = 'canceled'
-
-    @api.ondelete(at_uninstall=False)
-    def unlink(self):
-        for record in self:
-            if record.state not in ['new', 'canceled']:
-                raise UserError(_("You can't delete a property unless its state is 'New' or 'Canceled'."))
-        return super(PropertyModel, self).unlink()
+            self.garden_area = 0
+            self.garden_orientation = ''
