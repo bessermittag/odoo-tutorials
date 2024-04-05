@@ -17,6 +17,8 @@ class PropertyOfferModel(models.Model):
         for record in self:
             create_date = record.create_date if record.create_date else fields.Date.today()
             record.date_deadline = fields.Date.add(create_date, day=record.validity)
+
+    @api.depends("validity","date_deadline")
     def _inverse_date_deadline(self):
         for record in self:
             create_date = record.create_date if record.create_date else fields.Date.today()

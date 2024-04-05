@@ -9,7 +9,7 @@
         <field name="model">estate.property</field>
         <field name="priority">1</field>
         <field name="arch" type="xml">
-            <tree string="Properties">
+            <tree>
                 <field name="name"/>
                 <field name="postcode"/>
                 <field name="bedrooms"/>
@@ -59,7 +59,7 @@
                             </page>
                             <page string="Offers">
                                 <field name="offer_ids" mode="tree">
-                                    <tree string="Offer Lines">
+                                    <tree>
                                         <field name="price"/>
                                         <field name="partner_id"/>
                                         <field name="validity"/>
