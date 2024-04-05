@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from odoo import fields, models
+from odoo import api,fields, models
 
 class PropertyModel(models.Model):
     _name = "estate.property"
@@ -37,4 +37,23 @@ class PropertyModel(models.Model):
     partner_id = fields.Many2one('res.partner', string='Buyer', copy=False)
     user_id = fields.Many2one('res.users', string='Salesperson', default=lambda self: self.env.user)
     property_tag_id = fields.Many2many("estate.property.tag", string="Property Tags")
-    property_offers = fields.One2many("estate.property.offer","property_id")
+    offer_id = fields.One2many("estate.property.offer","property_id")
+    total_area = fields.Float(string='Total Area (sqm)',compute='_compute_total_area')
+    best_price = fields.Float(string='Best Offer',compute='_compute_best_price')
+
+    @api.depends("living_area","garden_area","offer_id.price")
+    def _compute_total_area(self):
+        for record in self:
+            record.total_area = record.living_area + record.garden_area
+    def _compute_best_price(self):
+        for record in self:
+            record.best_price = max(self.offer_id.mapped('price'))#
+
+    @api.onchange("garden")
+    def _onchange_garden(self):
+        if self.garden:
+            self.garden_area = 10
+            self.garden_orientation = 'north'
+        else:
+            self.garden_area = 0
+            self.garden_orientation = ''
