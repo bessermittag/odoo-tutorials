@@ -16,6 +16,7 @@
                 <field name="living_area"/>
                 <field name="expected_price"/>
                 <field name="selling_price"/>
+                <field name="best_price"/>
                 <field name="date_availability"/>
             </tree>
         </field>
@@ -41,6 +42,7 @@
                         <group>
                             <field name="expected_price"/>
                             <field name="selling_price"/>
+                            <field name="best_price"/>
                         </group>
                         <notebook>
                             <page string="Description">
@@ -53,6 +55,7 @@
                                     <field name="garden"/>
                                     <field name="garden_area"/>
                                     <field name="garden_orientation"/>
+                                    <field name="total_area"/>
                                 </group>
                             </page>
                             <page string="Offers">
@@ -93,6 +96,7 @@
                 <field name="garden"/>
                 <field name="garden_area"/>
                 <field name="garden_orientation"/>
+                <field name="total_area"/>
                 <field name="state"/>
                 <field name="active"/>
                 <group expand="1" string="Group By">
