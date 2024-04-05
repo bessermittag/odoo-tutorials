@@ -45,7 +45,7 @@ class PropertyModel(models.Model):
     def _compute_total_area(self):
         for record in self:
             record.total_area = record.living_area + record.garden_area
-            
+
     @api.depends("offer_ids.price")
     def _compute_best_price(self):
         for record in self:
