@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
-from odoo import _, api, fields, models
-
+from xml.dom import ValidationErr
+from odoo import api, fields, models, _
+from odoo.exceptions import UserError
+from odoo.tools.float_utils import float_compare, float_is_zero
 class PropertyModel(models.Model):
     _name = "estate.property"
     _description = "Estate Property Model"
@@ -38,7 +40,7 @@ class PropertyModel(models.Model):
     user_id = fields.Many2one('res.users', string='Salesperson', default=lambda self: self.env.user)
     property_tag_id = fields.Many2many("estate.property.tag", string="Property Tags")
     property_offers = fields.One2many("estate.property.offer","property_id")
-    
+
     total_area = fields.Integer(compute="_compute_total_area")
 
     @api.depends("living_area","garden_area")
@@ -62,3 +64,33 @@ class PropertyModel(models.Model):
         else:
             self.garden_area = False
             self.garden_orientation = False
+
+    @api.depends('property_offers.status')
+    def action_sold(self):
+        for record in self:
+            if record.state == 'canceled':
+                raise UserError(_("Canceled Properties can not be sold."))
+            record.state = 'sold'
+        return True
+
+    @api.depends('property_offers.status')
+    def action_cancel(self):
+        for record in self:
+            if record.state == 'sold':
+                raise UserError(_("Sold Properties can not be canceled."))
+            record.state = 'canceled'
+        return True
+    _sql_constraints = [
+        ('check_expected_price', 'CHECK(expected_price >= 0 )',
+         'The expected price must be strictly positive.'),
+         ('check_selling_price', 'CHECK(selling_price >= 0 )',
+         'selling price must be positive.')
+
+        ]
+    @api.constrains('selling_price','expected_price')
+    def _check_selling_price(self):
+
+         if not (float_is_zero(self.expected_price) or float_compare(self.selling_price, self.expected_price * 0.9, precision_rounding=self.company_id.currency_id.rounding)):
+            raise ValidationErr("Selling price cannot be lower than 90% of the expected price!")
+
+    
