@@ -42,6 +42,8 @@ class PropertyModel(models.Model):
     property_offers = fields.One2many("estate.property.offer","property_id")
     best_price = fields.Float(string="Best Offer", readonly=True, compute='_compute_best_price', store=True)
 
+
+    @api.onchange('living_area','garden_area')
     def _compute_total_area(self):
         for rec in self:
             rec.total_area = rec.living_area + rec.garden_area
