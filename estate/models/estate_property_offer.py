@@ -16,14 +16,14 @@ class PropertyOfferModel(models.Model):
     @api.depends("validity","date_deadline")
     def _compute_date_deadline(self):
         for record in self:
-            create_date = record.create_date if record.create_date else fields.Date.today()
-            record.date_deadline = fields.Date.add(create_date, day=record.validity)
+            create_date = record.create_date if record.create_date else fields.Datetime.today()
+            record.date_deadline = fields.Date.add(create_date.date(), day=record.validity)
 
     @api.depends("validity","date_deadline")
     def _inverse_date_deadline(self):
         for record in self:
-            create_date = record.create_date if record.create_date else fields.Date.today()
-            record.validity = (create_date - record.date_deadline).days
+            create_date = record.create_date if record.create_date else fields.Datefield.today()
+            record.validity = (record.date_deadline - create_date.date()).days
 
     def action_accept_offer(self):
         for record in self:
@@ -44,7 +44,7 @@ class PropertyOfferModel(models.Model):
         for record in self:
             if record.property_id.state in ['sold','canceled']:
                 raise UserError(_("Offers for canceled or sold Properties can't be refused."))
-            if record.status == 'accpeted':
+            if record.status == 'accpted':
                 record.property_id.partner_id = False
                 record.property_id.selling_price = False
                 record.property_id.state = 'new'
