@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-from odoo import api, fields, models
+from odoo import api, fields, models, _
+from odoo.exceptions import UserError
 
 class PropertyOfferModel(models.Model):
     _name = "estate.property.offer"
@@ -23,3 +24,29 @@ class PropertyOfferModel(models.Model):
         for record in self:
             create_date = record.create_date if record.create_date else fields.Date.today()
             record.validity = (create_date - record.date_deadline).days
+
+    def action_accept_offer(self):
+        for record in self:
+            if record.property_id.state in ['sold','canceled']:
+                raise UserError(_("Offers for canceled or sold Properties can't be accepted."))
+            elif record.property_id.state == 'offer_accepted':
+                raise UserError(_("There is already an accepted Offer for this Property."))
+            record.status = 'accepted'
+            record.property_id.state = 'offer_accepted'
+            record.property_id.partner_id = record.partner_id
+            record.property_id.selling_price = record.price
+            for other_offer in record.property_id.offer_ids:
+                if other_offer.id != record.id:
+                    other_offer.status = 'refused'
+        return True
+
+    def action_refuse_offer(self):
+        for record in self:
+            if record.property_id.state in ['sold','canceled']:
+                raise UserError(_("Offers for canceled or sold Properties can't be refused."))
+            if record.status == 'accpeted':
+                record.property_id.partner_id = False
+                record.property_id.selling_price = False
+                record.property_id.state = 'new'
+            record.status = 'refused'
+        return True
