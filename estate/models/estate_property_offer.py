@@ -1,17 +1,11 @@
 # -*- coding: utf-8 -*-
-from . import models, fields
+from odoo import fields, models
 
-class PropertyOfferModel(models.model)
-   _name = "estate.property.offer"
+class PropertyOfferModel(models.Model):
+    _name = "estate.property.offer"
     _description = "Estate Property Offer Model"
 
-   price = fields.Float(required=True)
-    status = fields.Selection(
-         string='Status',
-         selection=[('accepted','Accepted'),('refused','Refused')],
-         copy=False
-    )
-    partner_id = fields.Many2one('res.partner', string='Buyer')
-    property_id = fields.Many2one('estate.property', string='Property')
-
-
+    price = fields.Float()
+    status = fields.Selection(selection=[('accepted','Accepted'),('refused','Refused')],copy=False)
+    partner_id = fields.Many2one('res.partner',required=True)
+    property_id = fields.Many2one('estate.property',required=True)

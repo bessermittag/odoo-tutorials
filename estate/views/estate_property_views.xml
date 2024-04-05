@@ -1,9 +1,8 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <record id="estate_property_action" model="ir.actions.act_window">
         <field name="name">Properties</field>
         <field name="res_model">estate.property</field>
-        <field name="view_mode">tree,form</field>
     </record>
     <record id="estate_property_tree" model="ir.ui.view">
         <field name="name">estate.property.tree</field>
@@ -21,7 +20,6 @@
             </tree>
         </field>
     </record>
-
     <record id="estate_property_view_form" model="ir.ui.view">
         <field name="name">estate.property.form</field>
         <field name="model">estate.property</field>
@@ -36,7 +34,7 @@
                     <field name="property_tag_id" widget="many2many_tags"/>
                     <group>
                         <group>
-                            <field name="property_type_id"/>
+                            <field name="property_type_id" />
                             <field name="postcode"/>
                             <field name="date_availability"/>
                         </group>
@@ -57,20 +55,20 @@
                                     <field name="garden_orientation"/>
                                 </group>
                             </page>
-                            <page string="Other Info">
-                                <group>
-                                    <field name="salesperson"/>
-                                    <field name="buyer"/>
-                                </group>
-                            </page>
                             <page string="Offers">
-                                <field name="property_offer" mode="tree">
-                                     <tree>
+                                <field name="property_offers" mode="tree">
+                                    <tree string="Offer Lines">
                                         <field name="price"/>
                                         <field name="partner_id"/>
                                         <field name="status"/>
-                                     </tree>
+                                    </tree>
                                 </field>
+                            </page>
+                            <page string="Other Info">
+                                <group>
+                                    <field name="user_id"/>
+                                    <field name="partner_id"/>
+                                </group>
                             </page>
                         </notebook>
                     </group>
@@ -78,7 +76,6 @@
             </form>
         </field>
     </record>
-
     <record id="view_estate_property_search" model="ir.ui.view">
         <field name="name">estate.property.search</field>
         <field name="model">estate.property</field>
@@ -104,14 +101,12 @@
             </search>
         </field>
     </record>
-     <record id="estate_property_type_action" model="ir.actions.act_window">
+    <record id="estate_property_type_action" model="ir.actions.act_window">
         <field name="name">Property Types</field>
         <field name="res_model">estate.property.type</field>
     </record>
-
     <record id="estate_property_tag_action" model="ir.actions.act_window">
         <field name="name">Property Tags</field>
         <field name="res_model">estate.property.tag</field>
     </record>
-
 </odoo>
