@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from odoo import fields, models
+from odoo import api, fields, models
 
 class PropertyOfferModel(models.Model):
     _name = "estate.property.offer"
@@ -12,11 +12,13 @@ class PropertyOfferModel(models.Model):
     validity = fields.Integer(string='Validity (days)')
     date_deadline = fields.Date(string="Deadline", computed='_compute_date_deadline', inverse='_inverse_date_deadline')
 
+
+    @api.onchange('validity')
     def _compute_date_deadline(self):
         for rec in self:
             rec.date_deadline = fields.Date.add(fields.Date.today(), days=rec.validity)
 
-  #  @api.onchange('date_deadline')
+    @api.onchange('date_deadline')
     def _inverse_date_deadline(self):
         for rec in self:
             create_date = rec.create_date if rec.create_date else fields.Date.today()
