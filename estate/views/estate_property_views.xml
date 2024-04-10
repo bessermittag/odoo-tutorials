@@ -175,7 +175,6 @@
                     </div>
                     <notebook>
                         <page string="Properties">
-                            <group>
                                 <field name="property_ids">
                                     <tree>
                                         <field name="name"/>
@@ -183,7 +182,6 @@
                                         <field name="state"/>
                                     </tree>
                                 </field>
-                            </group>
                         </page>
                     </notebook>
                 </sheet>
