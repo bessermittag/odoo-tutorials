@@ -19,12 +19,3 @@ class PropertyTypeModel(models.Model):
     def _compute_offer_count(self):
         for record in self:
             record.offer_count = len(record.offer_ids)
-
-class PropertyTypeModelLine(models.Model):
-    _name = 'estate.property.type.line'
-    _description = 'Estate Property Model Line'
-
-    model_id = fields.Many2one('estate.property.type')
-    name = fields.Char()
-    expected_price = fields.Char()
-    state = fields.Char()
