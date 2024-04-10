@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+"access_employment_public","access_employment_public","model_employment",base.group_public,0,0,0,0
+"access_employment_portal","access_employment_portal","model_employment",base.group_portal,1,1,1,0
+"access_employment_employee","access_employment_employee","model_employment",base.group_user,1,1,1,1
