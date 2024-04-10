@@ -5,6 +5,7 @@ from odoo.exceptions import UserError
 class PropertyOfferModel(models.Model):
     _name = 'estate.property.offer'
     _description = 'Estate Property Offer Model'
+    _order = "price desc"
 
     price = fields.Float()
     status = fields.Selection(selection=[('accepted','Accepted'),('refused','Refused')],copy=False)
@@ -12,6 +13,7 @@ class PropertyOfferModel(models.Model):
     property_id = fields.Many2one('estate.property',required=True)
     validity = fields.Integer(string='Validity (days)',default=7)
     date_deadline = fields.Date(string='Deadline',compute='_compute_date_deadline',inverse='_inverse_date_deadline')
+    property_type_id = fields.Many2one(related='property_id.property_type_id', store=True)
     _sql_constraints = [
         ('estate_property_offer_check_price', 'CHECK(price > 0)','Property Offer Price must be strictly positive')
     ]
@@ -20,7 +22,7 @@ class PropertyOfferModel(models.Model):
     def _compute_date_deadline(self):
         for record in self:
             create_date = record.create_date if record.create_date else fields.Datetime.today()
-            record.date_deadline = fields.Date.add(create_date.date(), day=record.validity)
+            record.date_deadline = fields.Date.add(create_date.date(), day=record.validity) if record.validity > 0 else fields.Date.subtract(create_date.date(), day=-1 * record.validity)
 
     @api.depends('validity','date_deadline')
     def _inverse_date_deadline(self):
