@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from odoo import api,fields, models, _
 from odoo.exceptions import UserError, ValidationError
+from odoo.tools import float_compare, float_is_zero
 
 class PropertyModel(models.Model):
     _name = 'estate.property'
@@ -49,7 +50,8 @@ class PropertyModel(models.Model):
     @api.constrains('expected_price','selling_price')
     def _check_selling_price(self):
         for record in self:
-            if record.selling_price > 0 and record.selling_price < record.expected_price * 0.9:
+            precision = self.env.company.currency_id.decimal_places
+            if float_compare(record.selling_price, 0, precision) == 1 and float_compare(record.selling_price, record.expected_price * 0.9, precision) == -1:
                 raise ValidationError('The Selling Price must be at least 90% of the Expected Price! You must reduce the Expected Price if you want to accept this Offer.')
     _sql_constraints = [
         ('estate_property_check_expected_price', 'CHECK(expected_price > 0)','Property Expected Price must be strictly positive'),
