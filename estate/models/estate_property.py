@@ -6,6 +6,7 @@ from odoo.tools import float_utils
 class PropertyModel(models.Model):
     _name = "estate.property"
     _description = "Estate Property Model"
+    _order = "id desc"
 
     name = fields.Char(string='Title', required=True)
     description = fields.Text()
@@ -84,3 +85,9 @@ class PropertyModel(models.Model):
             raise UserError(_("You cannot cancel a sold property."))
         self.state = 'canceled'
 
+    @api.ondelete(at_uninstall=False)
+    def unlink(self):
+        for record in self:
+            if record.state not in ['new', 'canceled']:
+                raise UserError(_("You can't delete a property unless its state is 'New' or 'Canceled'."))
+        return super(PropertyModel, self).unlink()

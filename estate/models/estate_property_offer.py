@@ -5,6 +5,7 @@ from odoo.exceptions import UserError, ValidationError
 class PropertyOfferModel(models.Model):
     _name = "estate.property.offer"
     _description = "Estate Property Offer Model"
+    _order = "price desc"
 
     price = fields.Float()
     status = fields.Selection(selection=[('accepted','Accepted'),('refused','Refused')],copy=False)
@@ -12,6 +13,7 @@ class PropertyOfferModel(models.Model):
     property_id = fields.Many2one('estate.property',required=True)
     validity = fields.Integer(string='Validity (days)', default=7)
     date_deadline = fields.Date(string="Deadline", compute='_compute_date_deadline', inverse='_inverse_date_deadline',)
+    property_type_id = fields.Many2one(related='property_id.property_type_id', store=True)
 
     _sql_constraints = [
         ('price_check', 'CHECK(price >0)', 'The price must be positive!'),
@@ -56,3 +58,20 @@ class PropertyOfferModel(models.Model):
             record.status = 'refused'
         return True
 
+    @api.model
+    def create(self, vals):
+        property_id = vals.get('property_id')
+        price = vals.get('price')
+
+        if property_id and price:
+            property = self.env['estate.property'].browse(property_id)
+
+            # Check if the new offer's price is lower than any existing offer
+            existing_offers = self.search([('property_id', '=', property_id)])
+            if existing_offers and any(offer.price > price for offer in existing_offers):
+                raise UserError(_("You can't create an offer with a lower amount than an existing offer."))
+
+            # Set the property state to 'Offer Received'
+            property.state = 'offer_received'
+
+        return super().create(vals)
