@@ -8,7 +8,7 @@ class EmploymentModel(models.Model):
     partner_id = fields.Many2one('res.partner', string='Employee (Customer)', copy=False, domain=[('is_company', '=', False)])
     company_partner_id = fields.Many2one('res.partner', string='Employer (Company)', copy=False, domain=[('is_company', '=', True)])
     email = fields.Char()
-    employee_id = fields.Char(string='Employee ID')
+    employee_no = fields.Char(string='Employee ID')
     state = fields.Selection(
         string='Status',
         selection=[('pending','Pending'),('confirmed','Confirmed'),('revoked','Revoked')],

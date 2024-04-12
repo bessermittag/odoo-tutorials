@@ -1,31 +1,25 @@
 # -*- coding: utf-8 -*-
+from odoo import models, Command
 
-from odoo import models, fields, api , _, Command
-
-class EstatePropertyInherit(models.Model):
+class PropertyModel(models.Model):
     _inherit = 'estate.property'
 
-    def action_sold(self):
-      self.env['account.move'].create({
-          'partner_id': self.partner_id.id,
-          'move_type': 'out_invoice',
-          'invoice_date': fields.Date.today(),
-          'invoice_line_ids': [
-              Command.create({
-                  'name': 'Property Price',
-                  'quantity': 1,
-                  'price_unit': self.selling_price,
-              }),
-              Command.create({
-                'name': 'Property Sale',
-                'quantity': 1,
-                'price_unit': self.selling_price * 0.06,
-            }),
-              Command.create({
-                'name': 'Administrative Fees',
-                'quantity': 1,
-                'price_unit': 100.00,
-            })
-          ]
-        })
-      return super(EstatePropertyInherit, self).action_sold()
+    def action_update_state_sold(self):
+        move_lines = []
+        move_lines.append(Command.create({
+            'name': self.name,
+            'quantity': 1,
+            'price_unit': self.selling_price * 0.06
+        }))
+        move_lines.append(Command.create({
+            'name':'Administrative Fee',
+            'quantity': 1,
+            'price_unit': 100
+        }))
+        move_vals = {
+                'partner_id': self.partner_id.id,
+                'move_type' : 'out_invoice',
+                'invoice_line_ids': move_lines,
+            }
+        self.env['account.move'].create(move_vals)
+        return super().action_update_state_sold()

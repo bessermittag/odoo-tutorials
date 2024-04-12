@@ -1,11 +1,13 @@
+# -*- coding: utf-8 -*-
 {
-    'name': 'Estate Account',
-    'category': 'Tutorials/estate',
-    'version': '0.1',
-    'summary': 'Accounting and Invoicing features for the Real Estate Model',
-    'depends': ['estate', 'account'],
-    'data': [],
+    'name': 'Real Estate Account',
+    'category': 'Tutorials/estate_account',
+    'version': '17.0.1.0',
+    'summary': '',
+    'description': '',
+    'depends': ['estate','account'],
+    'data': [
+        ],
     'application': False,
-    'license': 'LGPL-3'
+    'license': 'LGPL-3',
 }
-
