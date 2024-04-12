@@ -69,9 +69,12 @@ class PropertyOfferModel(models.Model):
             # Check if the new offer's price is lower than any existing offer
             existing_offers = self.search([('property_id', '=', property_id)])
             if existing_offers and any(offer.price > price for offer in existing_offers):
-                raise UserError(_("You can't create an offer with a lower amount than an existing offer."))
+                highest_offer = max(offer.price for offer in existing_offers)
+                raise UserError(_("You can't create an offer with a lower amount than an existing offer.The highest existing offer is %s." % highest_offer))
 
             # Set the property state to 'Offer Received'
-            property.state = 'offer_received'
+            if property.state == 'new':
+                property.state = 'offer_received'
 
         return super().create(vals)
+

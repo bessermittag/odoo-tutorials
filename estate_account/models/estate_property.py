@@ -12,6 +12,11 @@ class EstatePropertyInherit(models.Model):
           'invoice_date': fields.Date.today(),
           'invoice_line_ids': [
               Command.create({
+                  'name': 'Property Price',
+                  'quantity': 1,
+                  'price_unit': self.selling_price,
+              }),
+              Command.create({
                 'name': 'Property Sale',
                 'quantity': 1,
                 'price_unit': self.selling_price * 0.06,
