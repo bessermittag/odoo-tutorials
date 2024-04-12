@@ -5,6 +5,7 @@ from odoo.tools import float_utils
 
 class PropertyModel(models.Model):
     _name = "estate.property"
+    _inherit = ['mail.thread', 'mail.activity.mixin']
     _description = "Estate Property Model"
     _order = "id desc"
 
@@ -48,6 +49,8 @@ class PropertyModel(models.Model):
         ('expected_price_check', 'CHECK(expected_price >0)', 'The expected price must be strictly positive!'),
         ('selling_price_check', 'CHECK(selling_price >= 0)', 'The selling price cannot be negative!'),
     ]
+
+
     @api.constrains('selling_price', 'expected_price')
     def _check_selling_price(self):
         for rec in self:
@@ -78,6 +81,9 @@ class PropertyModel(models.Model):
         if self.state == 'canceled':
             raise UserError(_("You cannot set a canceled property as sold."))
         self.state = 'sold'
+        self.message_post(body=_("Property %s has been sold.") % self.name,
+                          subtype_xmlid='mail.mt_note',
+                          )
 
     @api.depends('property_offers.status')
     def action_cancel(self):

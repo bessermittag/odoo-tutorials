@@ -5,7 +5,7 @@
     'version': '0.1',
     'summary': '',
     'description': "",
-    'depends': ['base'],
+    'depends': ['base','mail'],
     'data': [
         'security/ir.model.access.csv',
         'views/estate_property_views.xml',

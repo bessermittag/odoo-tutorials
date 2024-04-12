@@ -4,6 +4,7 @@ from odoo.exceptions import UserError, ValidationError
 
 class PropertyOfferModel(models.Model):
     _name = "estate.property.offer"
+    _inherit = ['mail.thread', 'mail.activity.mixin']
     _description = "Estate Property Offer Model"
     _order = "price desc"
 
@@ -58,7 +59,7 @@ class PropertyOfferModel(models.Model):
             record.status = 'refused'
         return True
 
-    @api.model
+    @api.model_create_multi
     def create(self, vals):
         property_id = vals.get('property_id')
         price = vals.get('price')
@@ -77,4 +78,3 @@ class PropertyOfferModel(models.Model):
                 property.state = 'offer_received'
 
         return super().create(vals)
-
