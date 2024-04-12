@@ -12,7 +12,7 @@
     <field name="name">estate.property.kanban</field>
     <field name="model">estate.property</field>
     <field name="arch" type="xml">
-        <kanban>
+        <kanban records_draggable="true">
              <field name="state"/>
             <templates>
                 <t t-name="kanban-box">
