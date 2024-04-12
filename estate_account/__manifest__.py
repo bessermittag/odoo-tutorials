@@ -5,7 +5,7 @@
     'summary': 'Accounting and Invoicing features for the Real Estate Model',
     'depends': ['estate', 'account'],
     'data': [],
-    'application': True,
+    'application': False,
     'license': 'LGPL-3'
 }
 
