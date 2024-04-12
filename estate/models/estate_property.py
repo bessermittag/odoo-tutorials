@@ -54,10 +54,6 @@ class PropertyModel(models.Model):
             precision = self.env.company.currency_id.decimal_places
             if float_compare(record.selling_price, 0, precision) == 1 and float_compare(record.selling_price, record.expected_price * 0.9, precision) == -1:
                 raise ValidationError('The Selling Price must be at least 90% of the Expected Price! You must reduce the Expected Price if you want to accept this Offer.')
-    _sql_constraints = [
-        ('estate_property_check_expected_price', 'CHECK(expected_price > 0)','Property Expected Price must be strictly positive'),
-        ('estate_property_check_selling_price', 'CHECK(selling_price >= 0)','Property Selling Price must be positive')
-    ]
 
     @api.depends('living_area','garden_area')
     def _compute_total_area(self):
