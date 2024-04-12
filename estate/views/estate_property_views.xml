@@ -4,7 +4,7 @@
         <field name="name">Properties</field>
         <field name="res_model">estate.property</field>
         <field name="context">{'search_default_availability': True}</field>
-        <field name="view_mode">kanban</field>
+        <field name="view_mode">kanban,tree,form</field>
     </record>
     <record id="estate_property_tree" model="ir.ui.view">
         <field name="name">estate.property.tree</field>

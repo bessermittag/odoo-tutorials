@@ -58,12 +58,12 @@ class PropertyOfferModel(models.Model):
             record.status = 'refused'
         return True
 
-    @api.model
+    @api.model_create_multi
     def create(self, vals):
-        property = self.env['estate.property'].browse(vals['property_id'])
-        for offer in property.offer_ids:
-            if vals['price'] < offer.price:
-                raise UserError(_('The offer must be higher than %s.',offer.price))
-        if property.state == 'new':
-            property.state = 'offer_received'
-        return super().create(vals)
+        offers = super().create(vals)
+        for offer in offers:
+            min_price = max(offer.property_id.offer_ids.mapped('price'))
+            if offer.price < min_price:
+                raise UserError(_('The offer must be higher than %s.', min_price))
+        offers.mapped('property_id').state = 'offer_received'
+        return offers
