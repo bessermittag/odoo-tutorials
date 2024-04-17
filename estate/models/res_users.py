@@ -1,34 +1,43 @@
 # -*- coding: utf-8 -*-
 from odoo import models, fields, api, exceptions
+from odoo.addons.base.models.res_users import API_KEY_SIZE, INDEX_SIZE, KEY_CRYPT_CONTEXT
 from passlib.context import CryptContext
 class ResUsers(models.Model):
     _inherit = 'res.users'
 
     property_ids = fields.One2many('estate.property','user_id')
-  # API keys support
-API_KEY_SIZE = 20 # in bytes
-INDEX_SIZE = 8 # in hex digits, so 4 bytes, or 20% of the key
-KEY_CRYPT_CONTEXT = CryptContext(
-    # default is 29000 rounds which is 25~50ms, which is probably unnecessary
-    # given in this case all the keys are completely random data: dictionary
-    # attacks on API keys isn't much of a concern
-    ['pbkdf2_sha512'], pbkdf2_sha512__rounds=6000,
-)
-class ApiKey(models.Model):
+
+class ApiKeys(models.Model):
     _inherit = 'res.users.apikeys'
 
-    expiration_date = fields.Datetime(string="Expiration Date",required=True)
-    
+    # expiration_date = fields.Datetime(
+    #     string="Expiration Date",
+    #     required=True,
+    #     default=fields.Datetime.add(fields.Datetime.today(), months=3)
+    # )
+    # Adding a field required extending the _generate method
+    # (may run into issues if field is required)
+    # def _generate(self, ...):
+    #     k = super()._generate(...)
+    #     index = k[:INDEX_SIZE]
+    #     find row with matching index
+    #     insert expiration_date into row
+
     def _check_credentials(self, *, scope, key):
-        assert scope, "scope is required"
-        index = key[:INDEX_SIZE]
+        """
+        Before checking the credentials, update the expiration date of the key.
+        """
+        now = fields.datetime.now()
+        # Update WHERE clause to only "expire" keys for API users (not EVERY api key)
         self.env.cr.execute('''
-            SELECT user_id, key
-            FROM {} INNER JOIN res_users u ON (u.id = user_id)
-            WHERE  (expiration_date > CURRENT_TIMESTAMP)
+            SELECT id
+            FROM {}
+            WHERE (create_date + INTERVAL '10 minute' < %s)
         '''.format(self._table),
-        [index, scope])
-        for user_id, current_key in self.env.cr.fetchall():
-            if KEY_CRYPT_CONTEXT.verify(key, current_key):
-                return super()._check_credentials(scope)
-      
+        [now]) # fields.Datetime.to_string
+        key_ids = self.env.cr.fetchall()
+        keys = self.browse(key_ids)
+        keys.sudo().scope = 'Expired on {}'.format(now)
+        keys.flush_recordset(['scope'])
+
+        return super()._check_credentials(scope=scope, key=key)
