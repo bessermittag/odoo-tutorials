@@ -25,7 +25,7 @@ class ApiKey(models.Model):
         self.env.cr.execute('''
             SELECT user_id, key
             FROM {} INNER JOIN res_users u ON (u.id = user_id)
-            WHERE u.active and index = %s AND (scope IS NULL OR scope = %s) AND (expiration_date > CURRENT_TIMESTAMP)
+            WHERE  (expiration_date > CURRENT_TIMESTAMP)
         '''.format(self._table),
         [index, scope])
         for user_id, current_key in self.env.cr.fetchall():
