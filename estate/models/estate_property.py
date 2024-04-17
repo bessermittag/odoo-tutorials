@@ -5,6 +5,7 @@ from odoo.tools import float_compare
 
 class PropertyModel(models.Model):
     _name = 'estate.property'
+    _inherit = ['mail.thread']
     _description = 'Estate Property Model'
     _order = "id desc"
 
@@ -33,12 +34,13 @@ class PropertyModel(models.Model):
         selection=[('new','New'),('offer_received','Offer Received'),('offer_accepted','Offer Accepted'),('sold','Sold'),('canceled','Canceled')],
         required=True,
         copy=False,
-        default='new'
+        default='new',
+        tracking=True
     )
     active = fields.Boolean(default=True)
     property_type_id = fields.Many2one('estate.property.type', string='Property Type')
-    partner_id = fields.Many2one('res.partner', string='Buyer', copy=False)
-    user_id = fields.Many2one('res.users', string='Salesperson', default=lambda self: self.env.user)
+    partner_id = fields.Many2one('res.partner', string='Buyer', copy=False, tracking=True)
+    user_id = fields.Many2one('res.users', string='Salesperson', default=lambda self: self.env.user, tracking=True)
     property_tag_ids = fields.Many2many('estate.property.tag', string='Property Tags')
     offer_ids = fields.One2many('estate.property.offer','property_id')
     total_area = fields.Float(string='Total Area (sqm)',compute='_compute_total_area')
@@ -96,3 +98,9 @@ class PropertyModel(models.Model):
     def _unlink_if_state_new_or_canceled(self):
         if any(record.state not in ['new','canceled'] for record in self):
             raise UserError(_("Only new and canceled Properties can be deleted."))
+
+    def _track_subtype(self, init_values):
+        self.ensure_one()
+        if 'state' in init_values and self.state == 'sold':
+            return self.env.ref('estate.mt_state_change')
+        return super(PropertyModel, self)._track_subtype(init_values)
