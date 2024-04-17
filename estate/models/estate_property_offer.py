@@ -1,54 +1,69 @@
 # -*- coding: utf-8 -*-
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError
+
 class PropertyOfferModel(models.Model):
-    _name = "estate.property.offer"
-    _description = "Estate Property Offer Model"
+    _name = 'estate.property.offer'
+    _description = 'Estate Property Offer Model'
+    _order = "price desc"
 
     price = fields.Float()
     status = fields.Selection(selection=[('accepted','Accepted'),('refused','Refused')],copy=False)
     partner_id = fields.Many2one('res.partner',required=True)
     property_id = fields.Many2one('estate.property',required=True)
-    validity = fields.Integer(string='Validity (days)')
-    date_deadline = fields.Date(string="Deadline", computed='_compute_date_deadline', inverse='_inverse_date_deadline')
+    validity = fields.Integer(string='Validity (days)',default=7)
+    date_deadline = fields.Date(string='Deadline',compute='_compute_date_deadline',inverse='_inverse_date_deadline')
+    property_type_id = fields.Many2one(related='property_id.property_type_id', store=True)
+    _sql_constraints = [
+        ('estate_property_offer_check_price', 'CHECK(price > 0)','Property Offer Price must be strictly positive')
+    ]
 
+    @api.depends('validity','date_deadline')
     def _compute_date_deadline(self):
         for record in self:
-            record.date_deadline = fields.Date.add(fields.Date.today(), days=record.validity)
+            create_date = record.create_date if record.create_date else fields.Datetime.today()
+            record.date_deadline = fields.Date.add(create_date.date(), day=record.validity) if record.validity > 0 else fields.Date.subtract(create_date.date(), day=-record.validity)
 
-  #  @api.onchange('date_deadline')
+    @api.depends('validity','date_deadline')
     def _inverse_date_deadline(self):
         for record in self:
-            create_date = record.create_date if record.create_date else fields.Date.today()
-            record.validity = (record.date_deadline - fields.Date.today()).days
+            create_date = record.create_date if record.create_date else fields.Datetime.today()
+            record.validity = (record.date_deadline - create_date.date()).days
 
-    
-    def action_accept(self):
+    def action_accept_offer(self):
         for record in self:
             if record.property_id.state in ['sold','canceled']:
-                raise UserError(_("Offers for canceled or sold Properties can't be accepted."))
+                raise UserError(_('Offers for canceled or sold Properties can\'t be accepted.'))
             elif record.property_id.state == 'offer_accepted':
-                raise UserError(_("There is already an accepted Offer for this Property."))
+                raise UserError(_('There is already an accepted Offer for this Property.'))
             record.status = 'accepted'
-            record.property_id.state = 'offer_accepted'
-            record.property_id.partner_id = record.partner_id
-            record.property_id.selling_price = record.price
-            for other_offer in record.property_id.offer:
-                if other_offer.id != record.id:
-                    other_offer.status = 'refused'
+            record.property_id.write({
+                'state': 'offer_accepted',
+                'partner_id': record.partner_id,
+                'selling_price': record.price,
+            })
+            (record.property_id.offer_ids - record).status = 'refused'
         return True
 
-    def action_refuse(self):
+    def action_refuse_offer(self):
         for record in self:
             if record.property_id.state in ['sold','canceled']:
-                raise UserError(_("Offers for canceled or sold Properties can't be refused."))
-            if record.status == 'accpeted':
-                record.property_id.partner_id = False
-                record.property_id.selling_price = False
-                record.property_id.state = 'new'
+                raise UserError(_('Offers for canceled or sold Properties can\'t be refused.'))
+            if record.status == 'accepted':
+                record.property_id.write({
+                    'partner_id': False,
+                    'selling_price': False,
+                    'state': 'new',
+                })
             record.status = 'refused'
-        return True     
-    _sql_constraints = [
-         ('check_price', 'CHECK(price >= 0 )',
-         'The offer price muste be positive.')
-    ]
+        return True
+
+    @api.model_create_multi
+    def create(self, vals):
+        offers = super().create(vals)
+        for offer in offers:
+            min_price = max(offer.property_id.offer_ids.mapped('price'))
+            if offer.price < min_price:
+                raise UserError(_('The offer must be higher than %s.', min_price))
+        offers.mapped('property_id').state = 'offer_received'
+        return offers
