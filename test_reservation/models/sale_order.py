@@ -1,6 +1,8 @@
+import math
 from odoo import fields, models, _
 from odoo.exceptions import UserError
 from datetime import timedelta
+
 
 
 class SaleOrder(models.Model):
@@ -20,18 +22,13 @@ class SaleOrder(models.Model):
 
     def action_pickup_half(self):
         order_lines = self.mapped("order_line")
-        pickings = self.picking_ids
-
-        for line in order_lines:
-            print(line.product_uom_qty - line.qty_delivered)
-        print(pickings)
-        for picking in pickings:
-            moves = picking.move_ids
-            print(moves)
-            for move in moves:
-                move_lines = move.move_line_ids
-                print(move_lines)
-                for ml in move_lines:
-                    print(ml.product_id)
-                    print(ml.quantity)
+        for picking in self.picking_ids:
+            for move in picking.move_ids:
+                for ml in move.move_line_ids:
+                    if (ml.quantity > 0):
+                        ml.write({
+                            'quantity': math.ceil(ml.quantity / 2)
+                        })
+            picking.picking_type_id.create_backorder = 'always'
+            picking.button_validate()
         raise UserError(_("Test."))

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'Reservation (Test)',
-    'category': 'Bessermittdag/Reservations',
+    'category': 'BesserMITTAG/Reservations',
     'version': '17.0.1.0',
     'depends': ['stock', 'sale', 'account'],
     'data': [
