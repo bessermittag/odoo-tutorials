@@ -21,6 +21,7 @@ class ResUsers(models.Model):
     def _create_main_order(self):
         for user in self:
             user.main_order_id = self.env['sale.order'].create({
+                'user_id': user.id,
                 'partner_id': user.partner_id.id,
                 'order_line': [Command.create({
                     'name': 'EXPIRED RESERVATIONS',

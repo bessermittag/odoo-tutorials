@@ -1,12 +1,20 @@
 import math
-from odoo import fields, models, _
-from odoo.exceptions import UserError
+from odoo import api, fields, models, _
+from odoo.exceptions import UserError, ValidationError
 from datetime import timedelta
 
 
 
 class SaleOrder(models.Model):
     _inherit = "sale.order"
+
+    @api.constrains("user_id")
+    def _check_user_id_matches_main_order_id(self):
+        for order in self.filtered(lambda o: o.user_id.main_order_id):
+            if order.user_id.main_order_id != order:
+                raise ValidationError(_("If a user has a main order, that order must be assigned to that user."))
+            if order.user_id.partner_id != order.partner_id:
+                raise ValidationError(_("If a user has a main order, that order must be directed to the related partner."))
 
     def _clear_old_reservations(self):
         old_lines = self.mapped("order_line").filtered(
