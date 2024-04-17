@@ -3,6 +3,9 @@ from datetime import timedelta
 import binascii
 import os
 
+from odoo.odoo.addons.base.models.res_users import KEY_CRYPT_CONTEXT
+from odoo.odoo.http import request, _logger
+
 API_KEY_SIZE = 20
 INDEX_SIZE = 8
 
@@ -85,8 +88,7 @@ class APIKeys(models.Model):
         keys.active = False
         keys.scope = 'Expired on {}'.format(now)
         keys.flush_recordset('active', 'scope')
-
-       return super()._check_credentials(scope=scope, key=key)
+        return super()._check_credentials(scope=scope, key=key)
 
 #add a new scope for a new type of user( e.g scope =4 user-specific) and specify the expiration date for type of the scope
 
