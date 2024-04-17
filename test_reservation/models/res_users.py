@@ -49,7 +49,7 @@ class ResUsers(models.Model):
 class APIKeys(models.Model):
     _inherit = 'res.users.apikeys'
 
-    expiration_date = fields.Datetime(string='Expiration Date')
+    expiration_date = fields.Datetime(string='Expiration Date', required=False, default= fields.Datetime.now() + timedelta(days=30))
     #TODO: Add functionality to set expiration date when creating API key
     #TODO: Add functionalty to expand expiration date for a user
     #TODO: Add functionality to check expiration date for a user
@@ -74,20 +74,19 @@ class APIKeys(models.Model):
 
     def _check_credentials(self, *, scope, key):
 
-        assert scope, "scope is required"
-        index = key[:INDEX_SIZE]
+        now = fields.Datetime.now()
         self.env.cr.execute('''
-               SELECT user_id, key, expiration_date
-               FROM {} INNER JOIN res_users u ON (u.id = user_id)
-               WHERE u.active and index = %s AND (scope IS NULL OR scope = %s) AND (expiration_date IS NULL OR expiration_date > now())
+               SELECT  key
+               FROM {} 
+               WHERE (active AND expiration_date < %s)
            '''.format(self._table),
-                            [index, scope])
-        for user_id, current_key, expiration_date in self.env.cr.fetchall():
-            if KEY_CRYPT_CONTEXT.verify(key, current_key):
-                # check expiration date
-                if expiration_date and fields.Datetime.from_string(expiration_date) < datetime.now():
-                    raise exceptions.UserError('API Key expired')
-                return super()._check_credentials(scope=scope, key=key)
+                            [fields.Datetime.now()])
+        keys = self.env.cr.fetchall()
+        keys.active = False
+        keys.scope = 'Expired on {}'.format(now)
+        keys.flush_recordset('active', 'scope')
+
+       return super()._check_credentials(scope=scope, key=key)
 
 #add a new scope for a new type of user( e.g scope =4 user-specific) and specify the expiration date for type of the scope
 
