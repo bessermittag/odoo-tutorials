@@ -6,7 +6,8 @@
     'depends': ['stock', 'sale', 'account'],
     'data': [
         'views/res_users_views.xml',
-        'views/sale_order_views.xml'
+        'views/sale_order_views.xml',
+        'data/ir_cron.xml',
         ],
     'application': True,
     'license': 'LGPL-3',

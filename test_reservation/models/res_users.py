@@ -36,3 +36,9 @@ class ResUsers(models.Model):
             self._create_main_order()
         self.main_order_id._clear_old_reservations()
         return self.main_order_id.order_line.filtered(lambda sol: not sol.display_type and sol.product_uom_qty > 0)
+
+    @api.model
+    def _action_create_invoices_for_main_so(self):
+        users = self.search([('main_order_id', '!=', False)])
+        users = users.with_context(raise_if_nothing_to_invoice=False)
+        moves = users.mapped('main_order_id')._create_invoices()
